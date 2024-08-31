@@ -55,7 +55,7 @@ class Board {
   }
 
   displayWithClear() {
-    console.clear();
+    console.clear(); // commented temporarily for testing purposes
     console.log('');
     console.log('');
     this.display();
@@ -79,6 +79,13 @@ class Board {
       return this.squares[key].getMarker() === player.getMarker();
     });
     return markers.length;
+  }
+
+  // getSquareAt(square) {
+  //   return this.squares[square];
+  // }
+  isUnusedSquare(key) {
+    return this.squares[key].isUnused();
   }
 }
 
@@ -201,14 +208,35 @@ class TTTGame {
   }
 
   computerMoves() {
-    let validChoices = this.board.unusedSquares();
-    let choice;
+    // defensive move
+    let choice = this.defensiveComputerMove();
 
-    do {
-      choice = Math.floor((9 * Math.random()) + 1).toString();
-    } while (!validChoices.includes(choice));
+    // random move
+    if (!choice) {
+      let validChoices = this.board.unusedSquares();
+
+      do {
+        choice = Math.floor((9 * Math.random()) + 1).toString();
+      } while (!validChoices.includes(choice));
+    }
 
     this.board.markSquareAt(choice, this.computer.getMarker());
+  }
+
+  defensiveComputerMove() {
+    let choice;
+
+    let possibleThreatRow = TTTGame.POSSIBLE_WINNING_ROWS.find(row => {
+      let humanMarkerCount = this.board.countMarkersFor(this.human, row);
+      let computerMarkerCount = this.board.countMarkersFor(this.computer, row);
+      return humanMarkerCount === 2 && computerMarkerCount === 0;
+    });
+
+    if (possibleThreatRow) {
+      choice = possibleThreatRow.find(key => this.board.isUnusedSquare(key));
+    }
+
+    return choice;
   }
 
   gameOver() {
@@ -240,8 +268,7 @@ class TTTGame {
 let game = new TTTGame();
 game.play();
 
-// TODO: play again
-// TODO: computer AI, defense
+
 // TODO: computer AI, offense
 // TODO: computer move improvement, pick center square
 // TODO: refactor move methods
