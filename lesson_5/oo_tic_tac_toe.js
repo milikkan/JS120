@@ -208,33 +208,50 @@ class TTTGame {
   }
 
   computerMoves() {
-    // defensive move
-    let choice = this.defensiveComputerMove();
-
-    // random move
-    if (!choice) {
-      let validChoices = this.board.unusedSquares();
-
-      do {
-        choice = Math.floor((9 * Math.random()) + 1).toString();
-      } while (!validChoices.includes(choice));
-    }
-
+    let choice = this.offensiveComputerMove() ||
+                 this.defensiveComputerMove() ||
+                 this.centerSquareComputerMove() ||
+                 this.randomComputerMove();
     this.board.markSquareAt(choice, this.computer.getMarker());
   }
 
+  offensiveComputerMove() {
+    return this.findTargetSquareFor(this.human);
+  }
+
   defensiveComputerMove() {
+    return this.findTargetSquareFor(this.computer);
+  }
+
+  findTargetSquareFor(player) {
     let choice;
 
-    let possibleThreatRow = TTTGame.POSSIBLE_WINNING_ROWS.find(row => {
-      let humanMarkerCount = this.board.countMarkersFor(this.human, row);
-      let computerMarkerCount = this.board.countMarkersFor(this.computer, row);
-      return humanMarkerCount === 2 && computerMarkerCount === 0;
+    let targetRow = TTTGame.POSSIBLE_WINNING_ROWS.find(row => {
+      return this.board.countMarkersFor(player, row) === 2;
     });
 
-    if (possibleThreatRow) {
-      choice = possibleThreatRow.find(key => this.board.isUnusedSquare(key));
+    if (targetRow) {
+      choice = this.findEmptySquareOn(targetRow);
     }
+
+    return choice;
+  }
+
+  findEmptySquareOn(row) {
+    return row.find(key => this.board.isUnusedSquare(key));
+  }
+
+  centerSquareComputerMove() {
+    return this.board.isUnusedSquare('5') ? '5' : undefined;
+  }
+
+  randomComputerMove() {
+    let choice;
+    let validChoices = this.board.unusedSquares();
+
+    do {
+      choice = Math.floor((9 * Math.random()) + 1).toString();
+    } while (!validChoices.includes(choice));
 
     return choice;
   }
@@ -269,8 +286,5 @@ let game = new TTTGame();
 game.play();
 
 
-// TODO: computer AI, offense
-// TODO: computer move improvement, pick center square
-// TODO: refactor move methods
 // TODO: keep score
 // TODO: take turns going first
