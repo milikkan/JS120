@@ -55,7 +55,8 @@ class Board {
   }
 
   displayWithClear() {
-    console.clear(); // commented temporarily for testing purposes
+    console.clear();
+    console.log('');
     console.log('');
     console.log('');
     this.display();
@@ -81,9 +82,6 @@ class Board {
     return markers.length;
   }
 
-  // getSquareAt(square) {
-  //   return this.squares[square];
-  // }
   isUnusedSquare(key) {
     return this.squares[key].isUnused();
   }
@@ -132,39 +130,62 @@ class TTTGame {
     ['1', '5', '9'],
     ['3', '5', '7']
   ];
+
   static MATCH_GOAL = 3;
+  static PLAY_AGAIN_CHOICES = ['yes', 'no', 'y', 'n']
+  static CENTER_SQUARE = '5';
 
   constructor() {
     this.board = new Board();
     this.human = new Human();
     this.computer = new Computer();
+    this.firstPlayer = Math.random() > 0.5 ? this.human : this.computer;
+    this.displayWelcome = true;
+  }
+
+  renderDisplay(welcome, roundResult, gameOver) {
+    if (welcome) {
+      this.displayWelcomeMessage();
+      this.board.display();
+    } else {
+      this.board.displayWithClear();
+    }
+
+    if (roundResult) {
+      this.displayRoundResult();
+    } else {
+      console.log('');
+    }
+
+    this.displayMatchScore();
+
+    if (gameOver) {
+      this.displayMatchResult();
+      this.displayGoodbyeMessage();
+    }
   }
 
   play() {
-    this.displayWelcomeMessage();
+    this.renderDisplay(this.displayWelcome, false, false);
     this.playMatch();
-    this.displayGoodbyeMessage();
+    this.renderDisplay(this.displayWelcome, false, true);
   }
 
   playMatch() {
-    this.board.display();
-    this.displayMatchScore();
+    this.renderDisplay(this.displayWelcome, false, false);
 
     while (true) {
       this.playSingleRound();
 
       this.updateMatchScore();
-      this.displayMatchScore();
+      this.renderDisplay(this.displayWelcome, true, false);
 
       if (this.matchOver()) break;
       if (this.playAgain().charAt(0) === 'n') break;
 
       this.board.reset();
-      this.board.displayWithClear();
-      this.displayMatchScore();
+      this.renderDisplay(this.displayWelcome, false, false);
     }
-
-    this.displayMatchResult();
   }
 
   updateMatchScore() {
@@ -195,18 +216,30 @@ class TTTGame {
   }
 
   playSingleRound() {
+    let currentPlayer = this.firstPlayer;
     while (true) {
-      this.humanMoves();
+      this.playerMoves(currentPlayer);
       if (this.gameOver()) break;
 
-      this.computerMoves();
-      if (this.gameOver()) break;
+      this.renderDisplay(this.displayWelcome, false, false);
+      this.displayWelcome = false;
 
-      this.board.displayWithClear();
-      this.displayMatchScore();
+      currentPlayer = this.alternatePlayer(currentPlayer);
     }
-    this.board.displayWithClear();
-    this.displayRoundResult();
+    this.renderDisplay(this.displayWelcome, true, false);
+  }
+
+  playerMoves(currentPlayer) {
+    if (currentPlayer === this.human) {
+      this.humanMoves();
+    } else {
+      this.computerMoves();
+    }
+  }
+
+  alternatePlayer(currentPlayer) {
+    return currentPlayer === this.human ?
+      this.computer : this.human;
   }
 
   playAgain() {
@@ -214,7 +247,7 @@ class TTTGame {
     console.log('Do you want to play again? (y/n)');
     while (true) {
       choice = readline.question().toLowerCase();
-      if (['yes', 'no', 'y', 'n'].includes(choice)) break;
+      if (TTTGame.PLAY_AGAIN_CHOICES.includes(choice)) break;
       console.log('Invalid choice! Please enter yes (y) or no (n)...');
     }
     return choice;
@@ -223,6 +256,7 @@ class TTTGame {
   displayWelcomeMessage() {
     console.clear();
     console.log('Welcome to Tic Tac Toe!');
+    console.log(`${this.firstPlayer === this.human ? 'You play' : 'Computer plays'} first...`);
     console.log('');
   }
 
@@ -293,7 +327,8 @@ class TTTGame {
   }
 
   centerSquareComputerMove() {
-    return this.board.isUnusedSquare('5') ? '5' : undefined;
+    return this.board.isUnusedSquare(TTTGame.CENTER_SQUARE) ?
+      TTTGame.CENTER_SQUARE : undefined;
   }
 
   randomComputerMove() {
@@ -335,7 +370,3 @@ class TTTGame {
 
 let game = new TTTGame();
 game.play();
-
-
-// TODO: keep score
-// TODO: take turns going first
